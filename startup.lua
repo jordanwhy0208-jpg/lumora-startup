@@ -1,99 +1,145 @@
-local T=game:GetService("TweenService")
-local C=workspace.CurrentCamera
-local S=game:GetService("SoundService")
-local f=C.FieldOfView
+local TweenService = game:GetService("TweenService")
+local Camera = workspace.CurrentCamera
+local SoundService = game:GetService("SoundService")
 
-local g=Instance.new("ScreenGui",game.CoreGui)
-g.IgnoreGuiInset=true g.ResetOnSpawn=false
+local originalFOV = Camera.FieldOfView
+local finished = false
 
-local b=Instance.new("Frame",g)
-b.Size=UDim2.fromScale(1,1)
-b.BackgroundColor3=Color3.fromRGB(5,5,15)
+-- ================= GUI =================
 
-local a=Instance.new("Frame",b)
-a.Size=UDim2.fromScale(.18,.3)
-a.Position=UDim2.fromScale(.5,.5)
-a.AnchorPoint=Vector2.new(.5,.5)
-a.BackgroundColor3=Color3.fromRGB(90,170,255)
-a.BackgroundTransparency=.15
-Instance.new("UICorner",a).CornerRadius=UDim.new(1,0)
+local gui = Instance.new("ScreenGui")
+gui.IgnoreGuiInset = true
+gui.ResetOnSpawn = false
+gui.Parent = game.CoreGui
 
-local s=Instance.new("UIStroke",a)
-s.Thickness=7 s.Color=Color3.fromRGB(140,220,255)
+local bg = Instance.new("Frame")
+bg.Size = UDim2.fromScale(1,1)
+bg.BackgroundColor3 = Color3.fromRGB(5,5,15)
+bg.Parent = gui
 
-local t=Instance.new("TextLabel",b)
-t.Size=UDim2.new(1,0,0,60)
-t.Position=UDim2.fromScale(.5,.68)
-t.AnchorPoint=Vector2.new(.5,.5)
-t.BackgroundTransparency=1
-t.Text="POWER LEVEL RISING"
-t.Font=Enum.Font.GothamBlack
-t.TextSize=34
-t.TextColor3=s.Color
-t.TextTransparency=1
+-- ================= AURA =================
 
-local l=Instance.new("Frame",b)
-l.Size=UDim2.fromScale(.4,.02)
-l.Position=UDim2.fromScale(.5,.78)
-l.AnchorPoint=Vector2.new(.5,.5)
-l.BackgroundColor3=Color3.fromRGB(30,30,50)
-Instance.new("UICorner",l).CornerRadius=UDim.new(1,0)
+local aura = Instance.new("Frame")
+aura.Size = UDim2.fromScale(0.18,0.3)
+aura.Position = UDim2.fromScale(0.5,0.45)
+aura.AnchorPoint = Vector2.new(0.5,0.5)
+aura.BackgroundColor3 = Color3.fromRGB(90,170,255)
+aura.BackgroundTransparency = 0.15
+aura.Parent = bg
+Instance.new("UICorner",aura).CornerRadius = UDim.new(1,0)
 
-local lf=Instance.new("Frame",l)
-lf.Size=UDim2.fromScale(0,1)
-lf.BackgroundColor3=s.Color
-Instance.new("UICorner",lf).CornerRadius=UDim.new(1,0)
+local stroke = Instance.new("UIStroke",aura)
+stroke.Thickness = 6
+stroke.Color = Color3.fromRGB(140,220,255)
 
-local sk=Instance.new("TextButton",b)
-sk.Size=UDim2.fromScale(.08,.04)
-sk.Position=UDim2.fromScale(.92,.05)
-sk.AnchorPoint=Vector2.new(1,0)
-sk.Text="SKIP"
-sk.Font=Enum.Font.GothamBold
-sk.TextSize=14
-sk.TextColor3=Color3.new(1,1,1)
-sk.BackgroundColor3=Color3.fromRGB(120,80,200)
-Instance.new("UICorner",sk)
+-- ================= TEXT =================
 
-local snd=Instance.new("Sound",S)
-snd.SoundId="rbxassetid://1843529637"
-snd.Looped=true snd.Volume=.6 snd:Play()
+local text = Instance.new("TextLabel")
+text.Size = UDim2.new(1,0,0,50)
+text.Position = UDim2.fromScale(0.5,0.65)
+text.AnchorPoint = Vector2.new(0.5,0.5)
+text.BackgroundTransparency = 1
+text.Text = "POWER LEVEL RISING"
+text.Font = Enum.Font.GothamBlack
+text.TextSize = 32
+text.TextTransparency = 1
+text.TextColor3 = stroke.Color
+text.Parent = bg
 
-local p=Instance.new("ParticleEmitter",a)
-p.Rate=120
-p.Speed=NumberRange.new(3,6)
-p.Lifetime=NumberRange.new(.6,1)
-p.Size=NumberSequence.new{{0,.6},{1,0}}
-p.Color=ColorSequence.new(s.Color)
+-- ================= LOADING BAR =================
 
-T:Create(a,TweenInfo.new(.5,Enum.EasingStyle.Sine,Enum.EasingDirection.InOut,-1,true),
-{Size=UDim2.fromScale(.25,.4)}):Play()
+local barBG = Instance.new("Frame")
+barBG.Size = UDim2.fromScale(0.4,0.02)
+barBG.Position = UDim2.fromScale(0.5,0.75)
+barBG.AnchorPoint = Vector2.new(0.5,0.5)
+barBG.BackgroundColor3 = Color3.fromRGB(35,35,55)
+barBG.Parent = bg
+Instance.new("UICorner",barBG).CornerRadius = UDim.new(1,0)
 
-T:Create(s,TweenInfo.new(.5,Enum.EasingStyle.Sine,Enum.EasingDirection.InOut,-1,true),
-{Transparency=.7}):Play()
+local bar = Instance.new("Frame")
+bar.Size = UDim2.fromScale(0,1)
+bar.BackgroundColor3 = stroke.Color
+bar.Parent = barBG
+Instance.new("UICorner",bar).CornerRadius = UDim.new(1,0)
 
-T:Create(t,TweenInfo.new(1),{TextTransparency=0}):Play()
-T:Create(C,TweenInfo.new(2),{FieldOfView=55}):Play()
-T:Create(lf,TweenInfo.new(3),{Size=UDim2.fromScale(1,1)}):Play()
+-- ================= SKIP BUTTON =================
+
+local skip = Instance.new("TextButton")
+skip.Size = UDim2.fromScale(0.1,0.045)
+skip.Position = UDim2.fromScale(0.95,0.06)
+skip.AnchorPoint = Vector2.new(1,0)
+skip.Text = "SKIP"
+skip.Font = Enum.Font.GothamBold
+skip.TextSize = 14
+skip.TextColor3 = Color3.new(1,1,1)
+skip.BackgroundColor3 = Color3.fromRGB(120,80,200)
+skip.Parent = bg
+Instance.new("UICorner",skip).CornerRadius = UDim.new(0,10)
+
+-- ================= SOUND =================
+
+local hum = Instance.new("Sound")
+hum.SoundId = "rbxassetid://1843529637"
+hum.Looped = true
+hum.Volume = 0.5
+hum.Parent = SoundService
+hum:Play()
+
+-- ================= PARTICLES =================
+
+local particles = Instance.new("ParticleEmitter")
+particles.Rate = 100
+particles.Speed = NumberRange.new(3,6)
+particles.Lifetime = NumberRange.new(0.6,1)
+particles.Size = NumberSequence.new{
+    NumberSequenceKeypoint.new(0,0.6),
+    NumberSequenceKeypoint.new(1,0)
+}
+particles.Color = ColorSequence.new(stroke.Color)
+particles.Parent = aura
+
+-- ================= ANIMATIONS =================
+
+TweenService:Create(
+    aura,
+    TweenInfo.new(0.5,Enum.EasingStyle.Sine,Enum.EasingDirection.InOut,-1,true),
+    {Size = UDim2.fromScale(0.25,0.4)}
+):Play()
+
+TweenService:Create(
+    stroke,
+    TweenInfo.new(0.5,Enum.EasingStyle.Sine,Enum.EasingDirection.InOut,-1,true),
+    {Transparency = 0.7}
+):Play()
+
+TweenService:Create(text,TweenInfo.new(1),{TextTransparency = 0}):Play()
+TweenService:Create(Camera,TweenInfo.new(1.5),{FieldOfView = 55}):Play()
+TweenService:Create(bar,TweenInfo.new(3),{Size = UDim2.fromScale(1,1)}):Play()
+
+-- ================= TRANSFORM =================
 
 task.delay(2,function()
- a.BackgroundColor3=Color3.fromRGB(255,210,90)
- s.Color=Color3.fromRGB(255,230,140)
- p.Color=ColorSequence.new(s.Color)
- lf.BackgroundColor3=s.Color
- t.Text="MAXIMUM POWER"
+    aura.BackgroundColor3 = Color3.fromRGB(255,210,90)
+    stroke.Color = Color3.fromRGB(255,230,140)
+    particles.Color = ColorSequence.new(stroke.Color)
+    bar.BackgroundColor3 = stroke.Color
+    text.Text = "MAXIMUM POWER"
 end)
 
-local done=false
-local function endit()
- if done then return end
- done=true
- snd:Stop()
- T:Create(C,TweenInfo.new(.8),{FieldOfView=f}):Play()
- T:Create(b,TweenInfo.new(.8),{BackgroundTransparency=1}):Play()
- task.wait(.8)
- g:Destroy()
+-- ================= FINISH =================
+
+local function finish()
+    if finished then return end
+    finished = true
+
+    hum:Stop()
+    TweenService:Create(Camera,TweenInfo.new(0.6),{FieldOfView = originalFOV}):Play()
+    TweenService:Create(bg,TweenInfo.new(0.6),{BackgroundTransparency = 1}):Play()
+
+    task.wait(0.6)
+    gui:Destroy()
 end
 
-sk.MouseButton1Click:Connect(endit)
-task.delay(4,endit)
+skip.MouseButton1Click:Connect(finish)
+task.delay(4,finish)
+
